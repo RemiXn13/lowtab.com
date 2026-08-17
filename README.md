@@ -1,1 +1,1730 @@
-# lowtab.com
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alt Tab — Управление Составом</title>
+<style>
+:root{
+  --bg:#0e1118;
+  --panel:#151a23;
+  --panel2:#1a202b;
+  --line:#2a3342;
+  --text:#eef2f7;
+  --muted:#8994a6;
+  --accent:#b99a70;
+  --accent2:#d8bb8b;
+  --dd:#e77878;
+  --heal:#70c79a;
+  --tank:#70a8e8;
+  --shadow:0 14px 35px rgba(0,0,0,.22);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 20% 0%,rgba(185,154,112,.08),transparent 32%),
+    radial-gradient(circle at 100% 20%,rgba(100,130,180,.07),transparent 28%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  font-size:16px;
+  touch-action: manipulation;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:1600px;margin:auto;padding:24px;flex:1;width:100%}
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px;margin-bottom:20px;
+  border:1px solid var(--line);border-radius:16px;
+  background:rgba(21,26,35,.72);backdrop-filter:blur(12px);
+  box-shadow:var(--shadow)
+}
+.logo{display:flex;align-items:center;gap:13px}
+.logo-mark{
+  width:42px;height:42px;border-radius:12px;
+  display:grid;place-items:center;
+  border:1px solid rgba(216,187,139,.4);
+  color:var(--accent2);font-weight:800;
+  background:rgba(185,154,112,.08)
+}
+.logo h1{font-size:22px;margin:0;letter-spacing:.5px}
+.logo span{font-size:12px;color:var(--muted)}
+.nav{display:flex;gap:8px}
+.nav button{
+  border:1px solid transparent;background:transparent;color:var(--muted);
+  padding:10px 16px;border-radius:10px
+}
+.nav button.active,.nav button:hover{
+  color:var(--text);border-color:var(--line);background:var(--panel2)
+}
+.page{display:none}
+.page.active{display:block}
+
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:15px;margin-bottom:14px;flex-wrap:wrap
+}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.title h2{margin:0 0 4px;font-size:25px}
+.title p{margin:0;color:var(--muted);font-size:14px}
+.primary{
+  border:1px solid #c7a976;background:linear-gradient(135deg,#b99a70,#927653);
+  color:#15110c;font-weight:700;border-radius:11px;padding:11px 18px;
+  box-shadow:0 8px 20px rgba(185,154,112,.15)
+}
+.primary:hover{filter:brightness(1.08)}
+.danger-btn{
+  padding:10px 14px;border:1px solid var(--dd);background:rgba(231,120,120,.08);
+  color:var(--dd);border-radius:10px;font-weight:600;
+}
+.danger-btn:hover{background:rgba(231,120,120,.18)}
+
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px
+}
+.stat{
+  min-height:72px;padding:13px 16px;border:1px solid var(--line);
+  border-radius:11px;background:transparent;transition:.18s
+}
+.stat.clickable{cursor:pointer}
+.stat.clickable:hover{background:rgba(255,255,255,.025);border-color:#3b4658}
+.stat.active{border-color:var(--accent);background:rgba(185,154,112,.045)}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted)}
+.stat-value{font-size:25px;font-weight:700;margin-top:5px}
+.stat-value.dd{color:var(--dd)}
+.stat-value.heal{color:var(--heal)}
+.stat-value.tank{color:var(--tank)}
+.stat-hint{font-size:11px;color:#677286;margin-top:2px}
+
+.toolbar{
+  display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap
+}
+.search{
+  flex:1;min-width:240px;padding:11px 13px;border-radius:10px;
+  border:1px solid var(--line);background:var(--panel);color:var(--text);outline:none
+}
+.search:focus{border-color:#566276}
+.secondary{
+  padding:10px 14px;border:1px solid var(--line);background:var(--panel);
+  color:var(--text);border-radius:10px
+}
+.secondary:hover{background:var(--panel2)}
+
+.players-list{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px
+}
+.player{
+  border:1px solid var(--line);background:rgba(21,26,35,.76);
+  border-radius:12px;padding:13px 14px;display:flex;align-items:center;
+  gap:12px;user-select:none;box-shadow:0 8px 20px rgba(0,0,0,.1);
+  transition:.16s
+}
+.player.dragging{opacity:.45;transform:scale(.98)}
+.player.drag-over{border-color:var(--accent);transform:translateY(-2px)}
+.handle{color:#586476;font-size:19px;cursor:grab}
+.avatar{
+  width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+  background:#202733;border:1px solid #303a49;color:var(--accent2);font-weight:800
+}
+.player-main{min-width:0;flex:1}
+.player-name{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-info{font-size:12px;color:var(--muted);margin-top:4px}
+.weapon{color:#c9b89d}
+.role{
+  display:inline-block;margin-left:6px;padding:2px 7px;border-radius:20px;
+  font-size:10px;border:1px solid currentColor
+}
+.role.dd{color:var(--dd)} .role.heal{color:var(--heal)} .role.tank{color:var(--tank)}
+.empty{
+  padding:35px;text-align:center;color:var(--muted);
+  border:1px dashed var(--line);border-radius:12px;grid-column:1/-1
+}
+
+.group-overview{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px
+}
+.overview-item{
+  min-height:66px;padding:12px 15px;border:1px solid var(--line);
+  border-radius:11px;background:transparent;display:flex;
+  align-items:center;justify-content:space-between;gap:10px
+}
+.overview-item span{font-size:12px;color:var(--muted)}
+.overview-item strong{font-size:24px;color:var(--text)}
+.overview-item.assigned strong{color:var(--heal)}
+.overview-item.free strong{color:var(--accent2)}
+.group-player-pool{
+  border:1px solid var(--line);border-radius:14px;background:rgba(21,26,35,.72);
+  padding:14px;margin-bottom:16px
+}
+.pool-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px
+}
+.pool-title{font-size:17px;font-weight:750}
+.pool-subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+.pool-filters{display:flex;gap:6px;flex-wrap:wrap}
+.pool-filter{
+  border:1px solid var(--line);background:transparent;color:var(--muted);
+  padding:7px 11px;border-radius:8px;font-size:12px;cursor:pointer
+}
+.pool-filter:hover{background:var(--panel2);color:var(--text)}
+.pool-filter.active{background:rgba(185,154,112,.08);border-color:var(--accent);color:var(--accent2)}
+.pool-filter.dd.active{border-color:var(--dd);color:var(--dd)}
+.pool-filter.heal.active{border-color:var(--heal);color:var(--heal)}
+.pool-filter.tank.active{border-color:var(--tank);color:var(--tank)}
+.group-players-pool{display:flex;flex-wrap:wrap;gap:7px;min-height:48px}
+.pool-player{
+  display:flex;align-items:center;gap:8px;min-width:150px;
+  padding:7px 9px;border:1px solid #303949;border-radius:9px;
+  background:#11161e;cursor:grab;user-select:none;transition:.15s
+}
+.pool-player:hover{border-color:#4a5669;transform:translateY(-1px)}
+.pool-player.dragging{opacity:.18;filter:grayscale(.8)}
+.pool-avatar{
+  width:27px;height:27px;border-radius:7px;display:grid;place-items:center;
+  background:#202733;border:1px solid #303a49;color:var(--accent2);
+  font-size:10px;font-weight:800;flex:none
+}
+.pool-player-main{min-width:0}
+.pool-player-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pool-player-info{font-size:10px;color:var(--accent2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pool-player-role{font-size:9px;font-weight:700;margin-left:5px}
+.pool-player-role.dd{color:var(--dd)}
+.pool-player-role.heal{color:var(--heal)}
+.pool-player-role.tank{color:var(--tank)}
+.pool-empty{width:100%;padding:12px;color:#687487;font-size:12px;text-align:center;border:1px dashed #303949;border-radius:9px}
+
+.groups-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,390px));gap:14px;
+  align-items:start
+}
+.group{
+  border:1px solid var(--line);border-radius:14px;background:rgba(21,26,35,.78);
+  padding:14px;min-height:260px;transition:.15s;
+}
+.group.drop-target, .raid-group.drop-target{
+  outline:2px dashed var(--accent);outline-offset:2px;
+}
+.group-head{
+  cursor:grab;display:flex;justify-content:space-between;align-items:flex-start;
+  gap:10px;margin-bottom:11px;padding:4px;border-radius:6px;
+}
+.group-head:hover{background:rgba(255,255,255,.02)}
+.group-name{font-size:18px;font-weight:750}
+.group-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.group-actions{display:flex;gap:5px}
+.icon-btn{
+  width:32px;height:32px;border-radius:9px;border:1px solid var(--line);
+  background:transparent;color:var(--muted)
+}
+.icon-btn:hover{background:var(--panel2);color:var(--text)}
+.slots{display:flex;flex-direction:column;gap:6px}
+.slot{
+  min-height:54px;padding:8px 10px;border:1px solid #303949;border-radius:9px;
+  background:rgba(255,255,255,.012);transition:.15s;display:flex;
+  align-items:center;gap:10px;cursor:grab;user-select:none
+}
+.slot.dragging{opacity:.42;transform:scale(.985)}
+.slot.drag-over{border-color:var(--accent);background:rgba(185,154,112,.045);transform:translateY(-1px)}
+.slot-num{font-size:10px;color:#657083;min-width:25px}
+.slot-name{font-size:13px;font-weight:700;min-width:110px}
+.slot-info{font-size:11px;color:var(--accent2);margin-left:auto;text-align:right}
+.slot-info .weapon-text{color:var(--accent2)}
+.slot-info .role-text{font-weight:700;margin-left:7px}
+.slot-info .role-text.dd{color:var(--dd)}
+.slot-info .role-text.heal{color:var(--heal)}
+.slot-info .role-text.tank{color:var(--tank)}
+.slot-remove{
+  margin-left:4px;width:20px;height:20px;flex:none;border:0;border-radius:6px;
+  background:transparent;color:#667184;font-size:15px;line-height:18px;padding:0;cursor:pointer;
+}
+.slot-remove:hover{background:rgba(231,120,120,.12);color:var(--dd)}
+.slot-empty{width:100%;color:#5e697b;font-size:12px}
+.group-footer{
+  display:flex;justify-content:space-between;align-items:center;margin-top:11px;
+  padding-top:10px;border-top:1px solid #252d39;color:var(--muted);font-size:12px
+}
+.add-to-group{
+  width:100%;margin-top:9px;padding:9px 11px;border-radius:9px;
+  border:1px dashed #394454;background:transparent;color:#aeb8c7;
+  font-size:12px;cursor:pointer;
+}
+.add-to-group:hover{border-color:var(--accent);color:var(--accent2);background:rgba(185,154,112,.035)}
+
+/* Горизонтальная панель вкладок Рейда */
+.raid-tabs-bar{
+  display:flex;align-items:center;gap:8px;margin-bottom:15px;
+  background:rgba(21,26,35,.72);padding:10px;border-radius:12px;
+  border:1px solid var(--line);flex-wrap:wrap;
+}
+.raid-tab{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  font-size:13px;font-weight:600;cursor:pointer;transition:.15s;user-select:none;
+}
+.raid-tab:hover{background:var(--panel2);color:var(--text)}
+.raid-tab.active{
+  background:rgba(185,154,112,.12);border-color:var(--accent);
+  color:var(--accent2);font-weight:700;
+}
+.raid-tab-title{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.raid-tab-actions{display:flex;gap:3px;align-items:center}
+.raid-tab-btn{
+  border:0;background:transparent;color:var(--muted);font-size:12px;
+  cursor:pointer;padding:2px 4px;border-radius:4px;line-height:1
+}
+.raid-tab-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.raid-tab-btn.delete:hover{color:var(--dd);background:rgba(231,120,120,.15)}
+.add-raid-tab-btn{
+  display:flex;align-items:center;justify-content:center;padding:7px 12px;
+  border-radius:9px;border:1px dashed var(--accent);background:transparent;
+  color:var(--accent2);font-weight:bold;cursor:pointer;transition:.15s;font-size:14px
+}
+.add-raid-tab-btn:hover{background:rgba(185,154,112,.15)}
+
+.raid-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:10px;align-items:start;
+}
+.raid-group{
+  border:1px solid var(--line);border-radius:10px;background:rgba(21,26,35,.85);padding:8px 10px;
+}
+.raid-group-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;padding:4px;border-bottom:1px solid #252d39;
+  cursor:grab;border-radius:4px;
+}
+.raid-group-head:hover{background:rgba(255,255,255,.02)}
+.raid-group-title{font-size:14px;font-weight:700;color:var(--accent2)}
+.raid-group-meta{font-size:11px;color:var(--muted);margin-left:6px;}
+.raid-slots{display:flex;flex-direction:column;gap:4px}
+.raid-slot{
+  min-height:42px;padding:5px 8px;border:1px solid #28313f;border-radius:7px;
+  background:rgba(255,255,255,.01);display:flex;align-items:center;gap:8px;
+  cursor:grab;user-select:none;transition:.12s;
+}
+.raid-slot.drag-over{border-color:var(--accent);background:rgba(185,154,112,.08)}
+.raid-slot-num{font-size:10px;color:#556173;width:12px;flex:none}
+.raid-slot-main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.raid-slot-name{font-size:12px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.raid-slot-weapons{font-size:10px;color:var(--accent2);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.raid-slot-role{font-size:10px;font-weight:800;width:14px;text-align:center;flex:none}
+.raid-slot-role.dd{color:var(--dd)}
+.raid-slot-role.heal{color:var(--heal)}
+.raid-slot-role.tank{color:var(--tank)}
+.raid-slot-remove{
+  border:0;background:transparent;color:#586476;font-size:14px;cursor:pointer;padding:0 2px;flex:none;
+}
+.raid-slot-remove:hover{color:var(--dd)}
+.raid-slot-empty{color:#485363;font-size:11px;font-style:italic}
+.raid-add-btn{
+  width:100%;margin-top:6px;padding:5px;border-radius:6px;
+  border:1px dashed #303a4a;background:transparent;color:#8994a6;
+  font-size:11px;cursor:pointer
+}
+.raid-add-btn:hover{border-color:var(--accent);color:var(--text)}
+
+.add-group-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.add-group-filter{
+  border:1px solid #303949;background:#171e28;color:#aeb8c7;
+  border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;
+  cursor:pointer;transition:.15s
+}
+.add-group-filter:hover{border-color:var(--accent);color:#fff}
+.add-group-filter.active{background:rgba(185,154,112,.15);border-color:var(--accent);color:var(--accent2)}
+
+.add-group-search{
+  width:100%;box-sizing:border-box;margin-bottom:10px;padding:9px 12px;
+  border:1px solid #303949;border-radius:9px;background:#111720;
+  color:var(--text);font-size:12px;outline:none
+}
+.add-group-search:focus{border-color:var(--accent)}
+
+.group-choice{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;
+  padding:8px 11px;margin-bottom:6px;border:1px solid #303949;border-radius:9px;
+  background:#141a22;color:var(--text);cursor:pointer;transition:.15s
+}
+.group-choice:hover{border-color:var(--accent);background:#1b232e;transform:translateY(-1px)}
+.group-choice.disabled{opacity:0.5;cursor:not-allowed;border-color:#2a3342!important;}
+.group-choice-avatar{
+  width:30px;height:30px;border-radius:7px;display:grid;place-items:center;
+  background:#222b37;border:1px solid #394454;color:var(--accent2);
+  font-size:10px;font-weight:800;flex:none
+}
+.group-choice-main{min-width:0;flex:1}
+.group-choice-name{font-size:13px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-choice-weapons{margin-top:2px;font-size:10px;color:var(--accent2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-choice-role{font-size:9px;font-weight:700;margin-left:5px}
+.group-choice-role.dd{color:var(--dd)}
+.group-choice-role.heal{color:var(--heal)}
+.group-choice-role.tank{color:var(--tank)}
+.no-free{color:var(--muted);font-size:13px;text-align:center;padding:16px;border:1px dashed #303949;border-radius:9px}
+
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;
+  align-items:center;justify-content:center;padding:20px;z-index:20
+}
+.modal-backdrop.open{display:flex}
+.modal{
+  width:min(460px,100%);background:#151a23;border:1px solid var(--line);
+  border-radius:16px;padding:20px;box-shadow:0 25px 70px rgba(0,0,0,.5)
+}
+.modal h3{margin:0 0 16px;font-size:20px}
+.modal-section-title{
+  font-size:12px;text-transform:uppercase;color:var(--muted);
+  letter-spacing:1px;margin:12px 0 6px;font-weight:700;
+}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+.form-row input,.form-row select{
+  width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--line);
+  background:#0f141c;color:var(--text);outline:none
+}
+.form-row input:focus,.form-row select:focus{border-color:#596579}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:17px}
+
+.toast{
+  position:fixed;right:22px;bottom:22px;padding:12px 16px;border-radius:10px;
+  background:#202733;border:1px solid var(--line);box-shadow:var(--shadow);
+  opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s;z-index:30
+}
+.toast.show{opacity:1;transform:translateY(0)}
+
+.player-context-menu{
+  position:fixed;z-index:9999;display:none;min-width:205px;
+  padding:6px;background:#171d27;border:1px solid #394354;border-radius:10px;
+  box-shadow:0 14px 35px rgba(0,0,0,.42)
+}
+.player-context-menu.show{display:block}
+.player-context-menu button{
+  display:block;width:100%;padding:9px 11px;border:0;border-radius:7px;
+  background:transparent;color:var(--text);text-align:left;font-size:12px;cursor:pointer
+}
+.player-context-menu button:hover{background:#252e3c}
+.player-context-menu button[data-action="remove-group"]:hover{color:var(--accent2);background:rgba(185,154,112,.09)}
+.player-context-menu button[data-action="delete"]:hover{color:var(--dd);background:rgba(231,120,120,.09)}
+
+footer{
+  text-align:center;padding:16px;color:var(--muted);font-size:13px;
+  border-top:1px solid var(--line);margin-top:30px;
+}
+.customize-btn{
+  position:fixed;right:16px;bottom:16px;background:var(--panel);
+  border:1px solid var(--line);color:var(--muted);padding:8px 12px;
+  border-radius:20px;font-size:12px;box-shadow:var(--shadow);
+  cursor:pointer;z-index:10;opacity:0.7;transition:.2s
+}
+.customize-btn:hover{opacity:1;color:var(--text);border-color:var(--accent)}
+.color-picker-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.color-picker-row input[type="color"]{border:0;background:none;width:32px;height:32px;cursor:pointer}
+
+@media(max-width:800px){
+  .group-overview{grid-template-columns:1fr}
+  .app{padding:12px}
+  header{align-items:flex-start;gap:15px;flex-direction:column}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .groups-grid,.raid-grid{grid-template-columns:1fr}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.0/DragDropTouch.js"></script>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">
+    <div class="logo-mark" id="logoMark">AT</div>
+    <div><h1 id="logoText">ALT TAB</h1><span>Управление Составом</span></div>
+  </div>
+  <div class="nav">
+    <button class="active" data-page="players">Игроки</button>
+    <button data-page="groups">Группы</button>
+    <button data-page="raid">Рейд</button>
+  </div>
+</header>
+
+<!-- Вкладка ИГРОКИ -->
+<section id="playersPage" class="page active">
+  <div class="topbar">
+    <div class="title"><h2>Игроки</h2><p>Добавляй участников и сортируй их перетаскиванием.</p></div>
+    <button class="primary" id="addPlayerBtn">＋ Добавить</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat clickable active" data-role-filter="all">
+      <div class="stat-label">Всего игроков</div>
+      <div class="stat-value" id="countAll">0</div>
+      <div class="stat-hint">Показать всех</div>
+    </div>
+    <div class="stat clickable" data-role-filter="dd">
+      <div class="stat-label">ДД</div>
+      <div class="stat-value dd" id="countDD">0</div>
+      <div class="stat-hint">Нажмите для фильтра</div>
+    </div>
+    <div class="stat clickable" data-role-filter="heal">
+      <div class="stat-label">Хил</div>
+      <div class="stat-value heal" id="countHeal">0</div>
+      <div class="stat-hint">Нажмите для фильтра</div>
+    </div>
+    <div class="stat clickable" data-role-filter="tank">
+      <div class="stat-label">Танк</div>
+      <div class="stat-value tank" id="countTank">0</div>
+      <div class="stat-hint">Нажмите для фильтра</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" class="search" placeholder="Поиск игрока по нику или оружию...">
+    <button class="secondary" id="resetFilter">Сбросить фильтр</button>
+  </div>
+
+  <div id="playersList" class="players-list"></div>
+</section>
+
+<!-- Вкладка ГРУППЫ -->
+<section id="groupsPage" class="page">
+  <div class="topbar">
+    <div class="title"><h2>Группы</h2><p>Перетаскивайте окна групп за заголовок, чтобы менять их местами.</p></div>
+    <div class="topbar-actions">
+      <button class="danger-btn" id="clearGroupsBtn">Очистить все</button>
+      <button class="primary" id="addGroupBtn">＋ Создать группу</button>
+    </div>
+  </div>
+
+  <div class="group-overview">
+    <div class="overview-item">
+      <span>Всего игроков</span><strong id="groupTotalPlayers">0</strong>
+    </div>
+    <div class="overview-item assigned">
+      <span>В группах</span><strong id="groupAssignedPlayers">0</strong>
+    </div>
+    <div class="overview-item free">
+      <span>Осталось распределить</span><strong id="groupFreePlayers">0</strong>
+    </div>
+  </div>
+
+  <div class="group-player-pool">
+    <div class="pool-head">
+      <div>
+        <div class="pool-title">Игроки</div>
+        <div class="pool-subtitle">Перетаскивайте игроков в группы или кликайте ПКМ.</div>
+      </div>
+      <div class="pool-filters">
+        <button class="pool-filter active" data-group-filter="all">Все</button>
+        <button class="pool-filter dd" data-group-filter="dd">ДД</button>
+        <button class="pool-filter heal" data-group-filter="heal">Хил</button>
+        <button class="pool-filter tank" data-group-filter="tank">Танк</button>
+      </div>
+    </div>
+    <div id="groupPlayersPool" class="group-players-pool"></div>
+  </div>
+
+  <div id="groupsList" class="groups-grid"></div>
+</section>
+
+<!-- Вкладка РЕЙД -->
+<section id="raidPage" class="page">
+  <div class="topbar">
+    <div class="title"><h2>Рейдовый состав</h2><p>Создавайте несколько шаблонов рейдов и легко переключайтесь между ними.</p></div>
+    <div class="topbar-actions">
+      <button class="danger-btn" id="clearRaidBtn">Очистить отряды</button>
+      <button class="secondary" id="importGroupToRaidBtn">📋 Из «Групп»</button>
+      <button class="primary" id="addRaidGroupBtn">＋ Добавить отряд</button>
+    </div>
+  </div>
+
+  <!-- Горизонтальные вкладки рейдеров -->
+  <div class="raid-tabs-bar" id="raidTabsBar"></div>
+
+  <div class="group-player-pool" style="padding: 10px; margin-bottom: 12px;">
+    <div class="pool-head" style="margin-bottom:8px;">
+      <div>
+        <div class="pool-title" style="font-size:15px;">Пул свободных игроков для Рейда</div>
+      </div>
+      <div class="pool-filters">
+        <button class="pool-filter active" data-raid-filter="all">Все</button>
+        <button class="pool-filter dd" data-raid-filter="dd">ДД</button>
+        <button class="pool-filter heal" data-raid-filter="heal">Хил</button>
+        <button class="pool-filter tank" data-raid-filter="tank">Танк</button>
+      </div>
+    </div>
+    <div id="raidPlayersPool" class="group-players-pool"></div>
+  </div>
+
+  <div id="raidList" class="raid-grid"></div>
+</section>
+</div>
+
+<footer>
+  Сделано игроком RemiX (c) 2026
+</footer>
+
+<button class="customize-btn" id="openThemeModal">⚙ Настройки вида</button>
+
+<!-- Модальные окна -->
+<div class="modal-backdrop" id="playerModal">
+  <div class="modal">
+    <h3 id="playerModalTitle">Добавить игрока</h3>
+    <form id="playerForm">
+      <div class="form-row">
+        <label>Ник</label>
+        <input id="playerName" required maxlength="30" autocomplete="off" placeholder="Например: Shadow">
+      </div>
+      <div class="form-row">
+        <label>Оружие 1</label>
+        <select id="weapon1" required></select>
+      </div>
+      <div class="form-row">
+        <label>Оружие 2</label>
+        <select id="weapon2" required></select>
+      </div>
+      <div class="form-row">
+        <label>Роль</label>
+        <select id="role" required>
+          <option value="dd">ДД</option>
+          <option value="heal">Хил</option>
+          <option value="tank">Танк</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" id="closePlayerModal">Отмена</button>
+        <button type="submit" class="primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="addToGroupModal">
+  <div class="modal">
+    <h3 id="addToGroupTitle">Добавить игрока</h3>
+    <div class="add-group-filters">
+      <button class="add-group-filter active" data-modal-filter="all">Все</button>
+      <button class="add-group-filter" data-modal-filter="dd">ДД</button>
+      <button class="add-group-filter" data-modal-filter="heal">Хил</button>
+      <button class="add-group-filter" data-modal-filter="tank">Танк</button>
+    </div>
+    <input type="text" id="addGroupSearch" class="add-group-search" placeholder="Поиск по нику или оружию...">
+    <div id="availablePlayers" style="max-height: 280px; overflow-y: auto;"></div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="closeAddToGroupModal">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="selectTargetGroupModal">
+  <div class="modal">
+    <h3 id="selectTargetGroupTitle">Добавить игрока в состав</h3>
+    <div id="targetGroupsList" style="max-height: 320px; overflow-y: auto; display:flex; flex-direction:column; gap:6px;"></div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="closeSelectTargetGroupModal">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="importGroupModal">
+  <div class="modal">
+    <h3>Импортировать группу в рейд</h3>
+    <div id="importGroupsList" style="max-height: 320px; overflow-y: auto; display:flex; flex-direction:column; gap:6px;"></div>
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="closeImportGroupModal">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка кастомизации -->
+<div class="modal-backdrop" id="themeModal">
+  <div class="modal">
+    <h3>⚙ Кастомизация темы</h3>
+    <div class="form-row">
+      <label>Текст логотипа</label>
+      <input type="text" id="customLogoText" value="ALT TAB">
+    </div>
+    <div class="form-row">
+      <label>Иконка логотипа (1-3 символа)</label>
+      <input type="text" id="customLogoMark" value="AT" maxlength="3">
+    </div>
+    <div class="color-picker-row">
+      <label>Фон сайта</label>
+      <input type="color" id="themeBg" value="#0e1118">
+    </div>
+    <div class="color-picker-row">
+      <label>Основной акцент</label>
+      <input type="color" id="themeAccent" value="#b99a70">
+    </div>
+    <div class="color-picker-row">
+      <label>Цвет ДД</label>
+      <input type="color" id="themeDD" value="#e77878">
+    </div>
+    <div class="color-picker-row">
+      <label>Цвет Хила</label>
+      <input type="color" id="themeHeal" value="#70c79a">
+    </div>
+    <div class="color-picker-row">
+      <label>Цвет Танка</label>
+      <input type="color" id="themeTank" value="#70a8e8">
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="danger-btn" id="resetThemeBtn">Сброс</button>
+      <button type="button" class="secondary" id="closeThemeModal">Отмена</button>
+      <button type="button" class="primary" id="saveThemeBtn">Применить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="player-context-menu" id="playerContextMenu">
+  <button type="button" data-action="group">＋ Добавить в группу / рейд</button>
+  <button type="button" data-action="remove-group">− Удалить из состава</button>
+  <button type="button" data-action="edit">✎ Изменить параметры</button>
+  <button type="button" data-action="delete">× Удалить игрока</button>
+</div>
+
+<script>
+const weapons = ["Двуручный меч","Меч и щит","Кинжалы","Лук","Арбалет","Посох","Книга","Копьё"];
+
+let players = [];
+let groups = [];
+let raidPresets = []; 
+let currentRaidId = null;
+
+let activeRoleFilter = "all";
+let groupRoleFilter = "all";
+let raidRoleFilter = "all";
+
+let dragType = null;
+let dragPlayerId = null;
+let dragGroupId = null;
+
+let editingPlayerId = null;
+let contextPlayerId = null;
+let contextIsRaid = false;
+
+let modalTargetGroupId = null;
+let modalIsRaid = false;
+let modalRoleFilter = "all";
+
+const $ = id => document.getElementById(id);
+
+function getCurrentRaidGroups() {
+  const current = raidPresets.find(r => r.id === currentRaidId);
+  return current ? current.groups : [];
+}
+
+function save(){
+  localStorage.setItem("altTabPlayers", JSON.stringify(players));
+  localStorage.setItem("altTabGroups", JSON.stringify(groups));
+  localStorage.setItem("altTabRaidPresets", JSON.stringify(raidPresets));
+  localStorage.setItem("altTabCurrentRaidId", currentRaidId);
+}
+
+function load(){
+  try{
+    players = JSON.parse(localStorage.getItem("altTabPlayers") || "[]");
+    groups = JSON.parse(localStorage.getItem("altTabGroups") || "[]");
+    raidPresets = JSON.parse(localStorage.getItem("altTabRaidPresets") || "[]");
+    currentRaidId = localStorage.getItem("altTabCurrentRaidId") || null;
+  }catch(e){ players=[]; groups=[]; raidPresets=[]; currentRaidId=null; }
+
+  if(!raidPresets.length){
+    const oldRaid = JSON.parse(localStorage.getItem("altTabRaidGroups") || "[]");
+    const defaultRaid = { id: uid(), name: "Основной Рейд", groups: oldRaid };
+    raidPresets = [defaultRaid];
+    currentRaidId = defaultRaid.id;
+  }
+
+  if (!currentRaidId || !raidPresets.find(r => r.id === currentRaidId)) {
+    if (raidPresets.length) currentRaidId = raidPresets[0].id;
+  }
+  loadTheme();
+}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function roleName(r){ return r==="dd"?"ДД":r==="heal"?"Хил":"Танк"; }
+function roleShort(r){ return r==="dd"?"D":r==="heal"?"H":"T"; }
+function roleClass(r){ return r==="dd"?"dd":r==="heal"?"heal":"tank"; }
+function initials(name){ return name.trim().slice(0,2).toUpperCase(); }
+
+function toast(text){
+  const el=$("toast"); el.textContent=text; el.classList.add("show");
+  clearTimeout(toast.timer); toast.timer=setTimeout(()=>el.classList.remove("show"),2200);
+}
+
+function renderStats(){
+  $("countAll").textContent=players.length;
+  $("countDD").textContent=players.filter(p=>p.role==="dd").length;
+  $("countHeal").textContent=players.filter(p=>p.role==="heal").length;
+  $("countTank").textContent=players.filter(p=>p.role==="tank").length;
+  document.querySelectorAll(".stat[data-role-filter]").forEach(x=>{
+    x.classList.toggle("active",x.dataset.roleFilter===activeRoleFilter);
+  });
+}
+
+function renderPlayers(){
+  const list=$("playersList");
+  const q=$("search").value.trim().toLowerCase();
+  const filtered=players.filter(p=>{
+    const roleOk=activeRoleFilter==="all" || p.role===activeRoleFilter;
+    const text=(p.name+" "+p.weapon1+" "+p.weapon2).toLowerCase();
+    return roleOk && text.includes(q);
+  });
+  list.innerHTML="";
+  if(!filtered.length){
+    list.innerHTML='<div class="empty">Игроков по выбранному фильтру пока нет.</div>';
+    return;
+  }
+  filtered.forEach(p=>{
+    const el=document.createElement("div");
+    el.className="player";
+    el.draggable=true;
+    el.dataset.id=p.id;
+    el.innerHTML=`
+      <div class="handle" title="Перетащить">⋮⋮</div>
+      <div class="avatar">${initials(p.name)}</div>
+      <div class="player-main">
+        <div class="player-name">${escapeHtml(p.name)}
+          <span class="role ${roleClass(p.role)}">${roleName(p.role)}</span>
+        </div>
+        <div class="player-info"><span class="weapon">${escapeHtml(p.weapon1)}</span> / <span class="weapon">${escapeHtml(p.weapon2)}</span></div>
+      </div>`;
+    el.addEventListener("contextmenu",e=>showPlayerContextMenu(e,p.id,false));
+
+    el.addEventListener("dragstart",e=>{
+      dragType="player"; dragPlayerId=p.id; e.dataTransfer.effectAllowed="move"; el.classList.add("dragging");
+    });
+    el.addEventListener("dragend",()=>{ dragType=null; dragPlayerId=null; el.classList.remove("dragging"); });
+    el.addEventListener("dragover",e=>{ if(dragType==="player"){ e.preventDefault(); el.classList.add("drag-over"); } });
+    el.addEventListener("dragleave",()=>el.classList.remove("drag-over"));
+    el.addEventListener("drop",e=>{
+      e.preventDefault(); el.classList.remove("drag-over");
+      if(dragType==="player" && dragPlayerId && dragPlayerId!==p.id) reorderPlayers(dragPlayerId,p.id);
+    });
+    list.appendChild(el);
+  });
+}
+
+function reorderPlayers(fromId,toId){
+  const from=players.findIndex(p=>p.id===fromId);
+  const to=players.findIndex(p=>p.id===toId);
+  if(from<0||to<0)return;
+  const [item]=players.splice(from,1);
+  players.splice(to,0,item);
+  save();renderPlayers();
+}
+
+function reorderGroups(fromId,toId,isRaid=false){
+  const list = isRaid ? getCurrentRaidGroups() : groups;
+  const from = list.findIndex(g=>g.id===fromId);
+  const to = list.findIndex(g=>g.id===toId);
+  if(from<0 || to<0) return;
+  const [item] = list.splice(from, 1);
+  list.splice(to, 0, item);
+  save();
+  if(isRaid) renderRaid(); else renderGroups();
+}
+
+function renderGroups(){
+  const root=$("groupsList");
+  root.innerHTML="";
+  updateGroupOverview();
+  renderGroupPlayerPool();
+
+  if(!groups.length){
+    root.innerHTML='<div class="empty">Групп пока нет. Нажмите «＋ Создать группу».</div>';
+    return;
+  }
+
+  groups.forEach((g,groupIndex)=>{
+    const card=document.createElement("div");
+    card.className="group";
+    card.dataset.groupId=g.id;
+
+    const count=g.slots.filter(Boolean).length;
+
+    card.innerHTML=`
+      <div class="group-head" draggable="true" title="Зажмите для перемещения группы">
+        <div>
+          <div class="group-name">${escapeHtml(g.name)}</div>
+          <div class="group-meta">${count} / 6 игроков</div>
+        </div>
+        <div class="group-actions">
+          <button class="icon-btn rename" type="button" title="Переименовать">✎</button>
+          <button class="icon-btn delete" type="button" title="Удалить">×</button>
+        </div>
+      </div>
+      <div class="slots"></div>
+      <button class="add-to-group" type="button">＋ Добавить игрока</button>
+      <div class="group-footer">
+        <span>Свободно: <strong>${6-count}</strong></span>
+        <span>Группа ${groupIndex+1}</span>
+      </div>`;
+
+    const head = card.querySelector(".group-head");
+    head.addEventListener("dragstart", e=>{
+      dragType="group"; dragGroupId=g.id; e.dataTransfer.effectAllowed="move";
+    });
+    head.addEventListener("dragend", ()=>{ dragType=null; dragGroupId=null; });
+    
+    card.addEventListener("dragover", e=>{
+      if(dragType==="group" || dragType==="player"){ e.preventDefault(); card.classList.add("drop-target"); }
+    });
+    card.addEventListener("dragleave", ()=>card.classList.remove("drop-target"));
+    card.addEventListener("drop", e=>{
+      card.classList.remove("drop-target");
+      if(dragType==="group" && dragGroupId && dragGroupId!==g.id){
+        e.preventDefault();
+        reorderGroups(dragGroupId, g.id, false);
+      } else if(dragType==="player" && dragPlayerId){
+        e.preventDefault();
+        if(!e.target.closest('.slot')){
+          const emptyIndex = g.slots.findIndex(s=>!s);
+          if(emptyIndex !== -1){
+            movePlayerToSlot(dragPlayerId, g.id, emptyIndex, false);
+          } else {
+            toast("В группе нет свободных мест");
+          }
+        }
+      }
+    });
+
+    const slots=card.querySelector(".slots");
+    for(let i=0;i<6;i++){
+      const id=g.slots[i]||null;
+      const p=id?players.find(x=>x.id===id):null;
+
+      const slot=document.createElement("div");
+      slot.className="slot";
+      slot.draggable=!!p;
+
+      if(p){
+        slot.innerHTML=`
+          <div class="slot-num">${i+1}</div>
+          <div class="slot-name">${escapeHtml(p.name)}</div>
+          <div class="slot-info">
+            <span class="weapon-text">${escapeHtml(p.weapon1)} / ${escapeHtml(p.weapon2)}</span>
+            <span class="role-text ${roleClass(p.role)}">${roleName(p.role)}</span>
+          </div>
+          <button class="slot-remove" type="button" title="Убрать из группы">×</button>`;
+
+        slot.addEventListener("contextmenu",e=>showPlayerContextMenu(e,p.id,false));
+        slot.addEventListener("dragstart",e=>{
+          dragType="player"; dragPlayerId=p.id; e.dataTransfer.effectAllowed="move"; slot.classList.add("dragging");
+        });
+        slot.addEventListener("dragend",()=>{ dragType=null; dragPlayerId=null; slot.classList.remove("dragging"); });
+
+        slot.querySelector(".slot-remove").onclick=e=>{
+          e.stopPropagation(); g.slots[i]=null; save(); renderGroups(); toast(`${p.name} убран из группы`);
+        };
+      }else{
+        slot.innerHTML=`<div class="slot-num">${i+1}</div><div class="slot-empty">Свободный слот</div>`;
+      }
+
+      slot.addEventListener("dragover",e=>{ if(dragType==="player"){ e.preventDefault(); slot.classList.add("drag-over"); } });
+      slot.addEventListener("dragleave",()=>slot.classList.remove("drag-over"));
+      slot.addEventListener("drop",e=>{
+        if(dragType==="player" && dragPlayerId){
+          e.preventDefault();
+          e.stopPropagation();
+          slot.classList.remove("drag-over");
+          movePlayerToSlot(dragPlayerId,g.id,i,false);
+        }
+      });
+      slots.appendChild(slot);
+    }
+
+    card.querySelector(".add-to-group").onclick=()=>openAddToGroupModal(g.id,false);
+    card.querySelector(".delete").onclick=(e)=>{
+      e.stopPropagation();
+      if(confirm(`Удалить группу «${g.name}»?`)){
+        groups=groups.filter(x=>x.id!==g.id); save(); renderGroups(); toast("Группа удалена");
+      }
+    };
+    card.querySelector(".rename").onclick=(e)=>{
+      e.stopPropagation();
+      const n=prompt("Новое название группы:",g.name);
+      if(n&&n.trim()){
+        const trimmed = n.trim();
+        if(groups.some(x=>x.id!==g.id && x.name.toLowerCase()===trimmed.toLowerCase())){
+          alert("Группа с таким названием уже существует!");
+          return;
+        }
+        g.name=trimmed; save(); renderGroups();
+      }
+    };
+
+    root.appendChild(card);
+  });
+}
+
+function renderRaid(){
+  renderRaidTabs();
+  const root=$("raidList");
+  root.innerHTML="";
+  renderRaidPlayerPool();
+
+  const raidGroups = getCurrentRaidGroups();
+
+  if(!raidGroups.length){
+    root.innerHTML='<div class="empty">В текущем рейде пока нет отрядов. Нажмите «＋ Добавить отряд» или «📋 Из Групп».</div>';
+    return;
+  }
+
+  raidGroups.forEach((g,groupIndex)=>{
+    const card=document.createElement("div");
+    card.className="raid-group";
+
+    const count=g.slots.filter(Boolean).length;
+
+    card.innerHTML=`
+      <div class="raid-group-head" draggable="true" title="Зажмите для перемещения">
+        <div style="display:flex;align-items:center;min-width:0;">
+          <span class="raid-group-title">${escapeHtml(g.name)}</span>
+          <span class="raid-group-meta">${count}/6</span>
+        </div>
+        <div class="group-actions" style="margin-left:auto; display:flex; gap:4px;">
+          <button class="icon-btn rename" type="button" title="Переименовать" style="width:24px;height:24px;font-size:11px;border-radius:6px;">✎</button>
+          <button class="icon-btn delete" type="button" title="Удалить" style="width:24px;height:24px;font-size:11px;border-radius:6px;">×</button>
+        </div>
+      </div>
+      <div class="raid-slots"></div>
+      <button class="raid-add-btn" type="button">＋ Добавить</button>`;
+
+    const head = card.querySelector(".raid-group-head");
+    head.addEventListener("dragstart", e=>{
+      dragType="raidGroup"; dragGroupId=g.id; e.dataTransfer.effectAllowed="move";
+    });
+    head.addEventListener("dragend", ()=>{ dragType=null; dragGroupId=null; });
+    
+    card.addEventListener("dragover", e=>{
+      if(dragType==="raidGroup" || dragType==="player"){ e.preventDefault(); card.classList.add("drop-target"); }
+    });
+    card.addEventListener("dragleave", ()=>card.classList.remove("drop-target"));
+    card.addEventListener("drop", e=>{
+      card.classList.remove("drop-target");
+      if(dragType==="raidGroup" && dragGroupId && dragGroupId!==g.id){
+        e.preventDefault();
+        reorderGroups(dragGroupId, g.id, true);
+      } else if(dragType==="player" && dragPlayerId){
+        e.preventDefault();
+        if(!e.target.closest('.raid-slot')){
+          const emptyIndex = g.slots.findIndex(s=>!s);
+          if(emptyIndex !== -1){
+            movePlayerToSlot(dragPlayerId, g.id, emptyIndex, true);
+          } else {
+            toast("В отряде нет свободных мест");
+          }
+        }
+      }
+    });
+
+    const slots=card.querySelector(".raid-slots");
+    for(let i=0;i<6;i++){
+      const id=g.slots[i]||null;
+      const p=id?players.find(x=>x.id===id):null;
+
+      const slot=document.createElement("div");
+      slot.className="raid-slot";
+      slot.draggable=!!p;
+
+      if(p){
+        slot.innerHTML=`
+          <span class="raid-slot-num">${i+1}</span>
+          <div class="raid-slot-main">
+            <div class="raid-slot-name">${escapeHtml(p.name)}</div>
+            <div class="raid-slot-weapons">${escapeHtml(p.weapon1)} / ${escapeHtml(p.weapon2)}</div>
+          </div>
+          <span class="raid-slot-role ${roleClass(p.role)}">${roleShort(p.role)}</span>
+          <button class="raid-slot-remove" type="button" title="Убрать">×</button>`;
+
+        slot.addEventListener("contextmenu",e=>showPlayerContextMenu(e,p.id,true));
+        slot.addEventListener("dragstart",e=>{
+          dragType="player"; dragPlayerId=p.id; e.dataTransfer.effectAllowed="move";
+        });
+        slot.addEventListener("dragend",()=>{ dragType=null; dragPlayerId=null; });
+
+        slot.querySelector(".raid-slot-remove").onclick=e=>{
+          e.stopPropagation(); g.slots[i]=null; save(); renderRaid(); toast(`${p.name} убран из рейда`);
+        };
+      }else{
+        slot.innerHTML=`<span class="raid-slot-num">${i+1}</span><span class="raid-slot-empty">Свободно</span>`;
+      }
+
+      slot.addEventListener("dragover",e=>{ if(dragType==="player"){ e.preventDefault(); slot.classList.add("drag-over"); } });
+      slot.addEventListener("dragleave",()=>slot.classList.remove("drag-over"));
+      slot.addEventListener("drop",e=>{
+        if(dragType==="player" && dragPlayerId){
+          e.preventDefault();
+          e.stopPropagation();
+          slot.classList.remove("drag-over");
+          movePlayerToSlot(dragPlayerId,g.id,i,true);
+        }
+      });
+      slots.appendChild(slot);
+    }
+
+    card.querySelector(".raid-add-btn").onclick=()=>openAddToGroupModal(g.id,true);
+
+    card.querySelector(".delete").onclick=(e)=>{
+      e.stopPropagation();
+      if(confirm(`Удалить отряд «${g.name}»?`)){
+        const rGroups = getCurrentRaidGroups();
+        const idx = rGroups.findIndex(x=>x.id===g.id);
+        if(idx>=0) rGroups.splice(idx,1);
+        save(); renderRaid(); toast("Отряд удален");
+      }
+    };
+    card.querySelector(".rename").onclick=(e)=>{
+      e.stopPropagation();
+      const n=prompt("Новое название отряда:",g.name);
+      if(n&&n.trim()){
+        const trimmed = n.trim();
+        if(getCurrentRaidGroups().some(x=>x.id!==g.id && x.name.toLowerCase()===trimmed.toLowerCase())){
+          alert("Отряд с таким названием уже существует в этом рейде!");
+          return;
+        }
+        g.name=trimmed; save(); renderRaid();
+      }
+    };
+
+    root.appendChild(card);
+  });
+}
+
+// Отрисовка вкладок (табов) шаблонов рейдов
+function renderRaidTabs(){
+  const container = $("raidTabsBar");
+  if(!container) return;
+  container.innerHTML = "";
+
+  raidPresets.forEach(preset => {
+    const tab = document.createElement("div");
+    tab.className = "raid-tab" + (preset.id === currentRaidId ? " active" : "");
+
+    tab.innerHTML = `
+      <span class="raid-tab-title" title="${escapeHtml(preset.name)}">${escapeHtml(preset.name)}</span>
+      <div class="raid-tab-actions">
+        <button class="raid-tab-btn rename" type="button" title="Переименовать рейд">✎</button>
+        ${raidPresets.length > 1 ? '<button class="raid-tab-btn delete" type="button" title="Удалить рейд">×</button>' : ''}
+      </div>
+    `;
+
+    // Переключение по клику
+    tab.onclick = (e) => {
+      if (e.target.closest('.raid-tab-btn')) return;
+      if (currentRaidId !== preset.id) {
+        currentRaidId = preset.id;
+        save();
+        renderRaid();
+      }
+    };
+
+    // Переименование по двойному клику
+    tab.ondblclick = (e) => {
+      e.stopPropagation();
+      renameRaidPreset(preset.id);
+    };
+
+    const renameBtn = tab.querySelector('.rename');
+    if (renameBtn) {
+      renameBtn.onclick = (e) => {
+        e.stopPropagation();
+        renameRaidPreset(preset.id);
+      };
+    }
+
+    const deleteBtn = tab.querySelector('.delete');
+    if (deleteBtn) {
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteRaidPresetById(preset.id);
+      };
+    }
+
+    container.appendChild(tab);
+  });
+
+  // Кнопка добавления нового рейда на панель
+  const addBtn = document.createElement("button");
+  addBtn.className = "add-raid-tab-btn";
+  addBtn.type = "button";
+  addBtn.title = "Создать новый шаблон рейда";
+  addBtn.textContent = "＋";
+  addBtn.onclick = createRaidFn;
+  container.appendChild(addBtn);
+}
+
+function renameRaidPreset(presetId) {
+  const preset = raidPresets.find(r => r.id === presetId);
+  if (!preset) return;
+  const newName = prompt("Новое название шаблона рейда:", preset.name);
+  if (newName && newName.trim()) {
+    const trimmed = newName.trim();
+    if (raidPresets.some(r => r.id !== presetId && r.name.toLowerCase() === trimmed.toLowerCase())) {
+      alert("Рейд с таким названием уже существует!");
+      return;
+    }
+    preset.name = trimmed;
+    save();
+    renderRaid();
+    toast("Рейд переименован");
+  }
+}
+
+function deleteRaidPresetById(presetId) {
+  if (raidPresets.length <= 1) {
+    alert("Нельзя удалить единственный рейд!");
+    return;
+  }
+  const preset = raidPresets.find(r => r.id === presetId);
+  if (preset && confirm(`Удалить весь рейд «${preset.name}»?`)) {
+    raidPresets = raidPresets.filter(r => r.id !== presetId);
+    if (currentRaidId === presetId) {
+      currentRaidId = raidPresets[0].id;
+    }
+    save();
+    renderRaid();
+    toast("Рейд удален");
+  }
+}
+
+const createRaidFn = () => {
+  const defaultName = `Рейд ${raidPresets.length + 1}`;
+  const nameInput = prompt("Введите название нового рейда:", defaultName);
+  if(nameInput === null) return;
+  const finalName = nameInput.trim() || defaultName;
+
+  if(raidPresets.some(r => r.name.toLowerCase() === finalName.toLowerCase())){
+    alert(`Рейд с названием «${finalName}» уже существует!`);
+    return;
+  }
+
+  const newPreset = { id: uid(), name: finalName, groups: [] };
+  raidPresets.push(newPreset);
+  currentRaidId = newPreset.id;
+  save();
+  renderRaid();
+  toast(`Создан рейд «${finalName}»`);
+};
+
+function renderGroupPlayerPool(){
+  const root=$("groupPlayersPool"); if(!root) return; root.innerHTML="";
+  const assigned=new Set(); groups.forEach(g=>g.slots.forEach(id=>{if(id) assigned.add(id);}));
+  const filtered=players.filter(p=>!assigned.has(p.id)&&(groupRoleFilter==="all"||p.role===groupRoleFilter));
+
+  if(!filtered.length){ root.innerHTML='<div class="pool-empty">Нет свободных игроков.</div>'; return; }
+  filtered.forEach(p=>root.appendChild(createPoolPlayerElement(p, false)));
+}
+
+function renderRaidPlayerPool(){
+  const root=$("raidPlayersPool"); if(!root) return; root.innerHTML="";
+  const assigned=new Set(); getCurrentRaidGroups().forEach(g=>g.slots.forEach(id=>{if(id) assigned.add(id);}));
+  const filtered=players.filter(p=>!assigned.has(p.id)&&(raidRoleFilter==="all"||p.role===raidRoleFilter));
+
+  if(!filtered.length){ root.innerHTML='<div class="pool-empty">Нет свободных игроков.</div>'; return; }
+  filtered.forEach(p=>root.appendChild(createPoolPlayerElement(p, true)));
+}
+
+function createPoolPlayerElement(p, isRaid=false){
+  const el=document.createElement("div");
+  el.className="pool-player";
+  el.draggable=true;
+  el.innerHTML=`
+    <div class="pool-avatar">${initials(p.name)}</div>
+    <div class="pool-player-main">
+      <div class="pool-player-name">${escapeHtml(p.name)}
+        <span class="pool-player-role ${roleClass(p.role)}">${roleName(p.role)}</span>
+      </div>
+      <div class="pool-player-info">${escapeHtml(p.weapon1)} / ${escapeHtml(p.weapon2)}</div>
+    </div>`;
+  
+  el.addEventListener("contextmenu",e=>showPlayerContextMenu(e,p.id,isRaid));
+  el.addEventListener("dragstart",e=>{ dragType="player"; dragPlayerId=p.id; e.dataTransfer.effectAllowed="move"; });
+  el.addEventListener("dragend",()=>{ dragType=null; dragPlayerId=null; });
+  return el;
+}
+
+function updateGroupOverview(){
+  const assignedIds=new Set();
+  groups.forEach(g=>g.slots.forEach(id=>{if(id) assignedIds.add(id);}));
+  $("groupTotalPlayers").textContent=players.length;
+  $("groupAssignedPlayers").textContent=assignedIds.size;
+  $("groupFreePlayers").textContent=Math.max(0,players.length-assignedIds.size);
+}
+
+function movePlayerToSlot(playerId,targetGroupId,targetIndex,isRaid=false){
+  const targetList = isRaid ? getCurrentRaidGroups() : groups;
+  const targetGroup=targetList.find(g=>g.id===targetGroupId);
+  if(!targetGroup)return;
+
+  const sourceGroup=targetList.find(g=>g.slots.includes(playerId));
+  const sourceIndex=sourceGroup?sourceGroup.slots.indexOf(playerId):-1;
+  const targetPlayer=targetGroup.slots[targetIndex]||null;
+
+  if(targetPlayer && targetPlayer!==playerId){
+    if(sourceGroup) sourceGroup.slots[sourceIndex]=targetPlayer;
+    targetGroup.slots[targetIndex]=playerId;
+  }else{
+    if(sourceGroup) sourceGroup.slots[sourceIndex]=null;
+    targetGroup.slots[targetIndex]=playerId;
+  }
+
+  save();
+  if(isRaid) renderRaid(); else renderGroups();
+}
+
+function openAddToGroupModal(groupId, isRaid=false){
+  modalTargetGroupId = groupId;
+  modalIsRaid = isRaid;
+  modalRoleFilter = "all";
+  $("addGroupSearch").value = "";
+  
+  document.querySelectorAll("[data-modal-filter]").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.modalFilter === "all");
+  });
+
+  renderModalAvailablePlayers();
+  openModal("addToGroupModal");
+}
+
+function renderModalAvailablePlayers(){
+  const list = $("availablePlayers");
+  list.innerHTML = "";
+  const targetList = modalIsRaid ? getCurrentRaidGroups() : groups;
+  const targetGroup = targetList.find(g => g.id === modalTargetGroupId);
+  if(!targetGroup) return;
+
+  const assigned = new Set();
+  targetList.forEach(g => g.slots.forEach(id => { if(id) assigned.add(id); }));
+
+  const q = $("addGroupSearch").value.trim().toLowerCase();
+
+  const available = players.filter(p => {
+    const isFree = !assigned.has(p.id);
+    const roleOk = modalRoleFilter === "all" || p.role === modalRoleFilter;
+    const textOk = (p.name + " " + p.weapon1 + " " + p.weapon2).toLowerCase().includes(q);
+    return isFree && roleOk && textOk;
+  });
+
+  if (!available.length) {
+    list.innerHTML = '<div class="no-free">Подходящих свободных игроков не найдено.</div>';
+    return;
+  }
+
+  available.forEach(p => {
+    const btn = document.createElement("button");
+    btn.className = "group-choice";
+    btn.type = "button";
+    btn.innerHTML = `
+      <div class="group-choice-avatar">${initials(p.name)}</div>
+      <div class="group-choice-main">
+        <div class="group-choice-name">${escapeHtml(p.name)} <span class="group-choice-role ${roleClass(p.role)}">${roleName(p.role)}</span></div>
+        <div class="group-choice-weapons">${escapeHtml(p.weapon1)} / ${escapeHtml(p.weapon2)}</div>
+      </div>`;
+    
+    btn.onclick = () => {
+      const emptySlot = targetGroup.slots.findIndex(s => !s);
+      if (emptySlot !== -1) {
+        movePlayerToSlot(p.id, targetGroup.id, emptySlot, modalIsRaid);
+        renderModalAvailablePlayers();
+        if (targetGroup.slots.filter(Boolean).length >= 6) {
+          closeModal("addToGroupModal");
+        }
+      } else {
+        toast("В группе нет свободных мест");
+      }
+    };
+    list.appendChild(btn);
+  });
+}
+
+function openSelectTargetGroupModal(playerId){
+  const player = players.find(p => p.id === playerId);
+  if(!player) return;
+
+  $("selectTargetGroupTitle").textContent = `Добавить игрока ${player.name}`;
+  const list = $("targetGroupsList");
+  list.innerHTML = "";
+
+  let hasAny = false;
+
+  if (groups.length) {
+    hasAny = true;
+    const header = document.createElement("div");
+    header.className = "modal-section-title";
+    header.textContent = "Обычные Группы";
+    list.appendChild(header);
+
+    groups.forEach(g => {
+      const count = g.slots.filter(Boolean).length;
+      const inThisGroup = g.slots.includes(playerId);
+      const isFull = count >= 6;
+
+      const btn = document.createElement("button");
+      btn.className = "group-choice" + ((isFull || inThisGroup) ? " disabled" : "");
+      btn.type = "button";
+      
+      let statusText = `${count}/6 мест`;
+      if (inThisGroup) statusText = "Уже в этой группе";
+      else if (isFull) statusText = "Группа полная";
+
+      btn.innerHTML = `
+        <div class="group-choice-main">
+          <div class="group-choice-name">${escapeHtml(g.name)}</div>
+          <div class="group-choice-weapons">${statusText}</div>
+        </div>`;
+
+      if (!isFull && !inThisGroup) {
+        btn.onclick = () => {
+          const emptyIndex = g.slots.findIndex(s => !s);
+          if (emptyIndex !== -1) {
+            movePlayerToSlot(playerId, g.id, emptyIndex, false);
+            closeModal("selectTargetGroupModal");
+            toast(`${player.name} добавлен в ${g.name}`);
+          }
+        };
+      }
+      list.appendChild(btn);
+    });
+  }
+
+  const raidGroups = getCurrentRaidGroups();
+  if (raidGroups.length) {
+    hasAny = true;
+    const header = document.createElement("div");
+    header.className = "modal-section-title";
+    header.textContent = "Рейдовые Отряды";
+    list.appendChild(header);
+
+    raidGroups.forEach(rg => {
+      const count = rg.slots.filter(Boolean).length;
+      const inThisGroup = rg.slots.includes(playerId);
+      const isFull = count >= 6;
+
+      const btn = document.createElement("button");
+      btn.className = "group-choice" + ((isFull || inThisGroup) ? " disabled" : "");
+      btn.type = "button";
+
+      let statusText = `${count}/6 мест`;
+      if (inThisGroup) statusText = "Уже в этом отряде";
+      else if (isFull) statusText = "Отряд полный";
+
+      btn.innerHTML = `
+        <div class="group-choice-main">
+          <div class="group-choice-name">${escapeHtml(rg.name)}</div>
+          <div class="group-choice-weapons">${statusText}</div>
+        </div>`;
+
+      if (!isFull && !inThisGroup) {
+        btn.onclick = () => {
+          const emptyIndex = rg.slots.findIndex(s => !s);
+          if (emptyIndex !== -1) {
+            movePlayerToSlot(playerId, rg.id, emptyIndex, true);
+            closeModal("selectTargetGroupModal");
+            toast(`${player.name} добавлен в ${rg.name}`);
+          }
+        };
+      }
+      list.appendChild(btn);
+    });
+  }
+
+  if (!hasAny) {
+    list.innerHTML = '<div class="no-free">Сначала создайте хотя бы одну группу или рейдовый отряд.</div>';
+  }
+
+  openModal("selectTargetGroupModal");
+}
+
+function openImportGroupModal(){
+  const list = $("importGroupsList");
+  list.innerHTML = "";
+
+  if(!groups.length){
+    list.innerHTML = '<div class="no-free">Нет созданных групп для импорта. Сначала создайте группу во вкладке «Группы».</div>';
+  } else {
+    groups.forEach(g => {
+      const count = g.slots.filter(Boolean).length;
+      const btn = document.createElement("button");
+      btn.className = "group-choice";
+      btn.type = "button";
+      btn.innerHTML = `
+        <div class="group-choice-main">
+          <div class="group-choice-name">${escapeHtml(g.name)}</div>
+          <div class="group-choice-weapons">Участников: ${count}/6</div>
+        </div>`;
+      btn.onclick = () => {
+        let defaultName = g.name;
+        let finalName = prompt("Введите название отряда в рейде:", defaultName);
+        if (finalName === null) return;
+        finalName = finalName.trim() || defaultName;
+
+        const currentGroups = getCurrentRaidGroups();
+        if(currentGroups.some(x => x.name.toLowerCase() === finalName.toLowerCase())){
+          alert("Отряд с таким названием уже существует в этом рейде!");
+          return;
+        }
+
+        currentGroups.push({
+          id: uid(),
+          name: finalName,
+          slots: [...g.slots]
+        });
+        save();
+        renderRaid();
+        closeModal("importGroupModal");
+        toast(`Отряд «${finalName}» импортирован в рейд`);
+      };
+      list.appendChild(btn);
+    });
+  }
+
+  openModal("importGroupModal");
+}
+
+function hidePlayerContextMenu(){ $("playerContextMenu").classList.remove("show"); }
+function showPlayerContextMenu(e, playerId, isRaid=false){
+  e.preventDefault(); e.stopPropagation();
+  contextPlayerId=playerId; contextIsRaid=isRaid;
+  const menu=$("playerContextMenu");
+  menu.classList.add("show");
+  menu.style.left=Math.min(e.clientX, window.innerWidth-210)+"px";
+  menu.style.top=Math.min(e.clientY, window.innerHeight-150)+"px";
+}
+
+function setupPlayerContextMenu(){
+  const menu=$("playerContextMenu");
+  menu.querySelector('[data-action="group"]').onclick=()=>{
+    hidePlayerContextMenu();
+    openSelectTargetGroupModal(contextPlayerId);
+  };
+  menu.querySelector('[data-action="remove-group"]').onclick=()=>{
+    const targetList = contextIsRaid ? getCurrentRaidGroups() : groups;
+    targetList.forEach(g=>{ g.slots=g.slots.map(id=>id===contextPlayerId?null:id); });
+    save(); if(contextIsRaid) renderRaid(); else renderGroups();
+    hidePlayerContextMenu(); toast("Игрок убран из состава");
+  };
+  menu.querySelector('[data-action="edit"]').onclick=()=>{
+    openEditPlayerModal(contextPlayerId); hidePlayerContextMenu();
+  };
+  menu.querySelector('[data-action="delete"]').onclick=()=>{
+    deletePlayer(contextPlayerId); hidePlayerContextMenu();
+  };
+  document.addEventListener("click",hidePlayerContextMenu);
+}
+
+function openEditPlayerModal(playerId){
+  const p=players.find(x=>x.id===playerId); if(!p)return;
+  editingPlayerId=playerId;
+  $("playerModalTitle").textContent="Изменить игрока";
+  $("playerName").value=p.name;
+  $("weapon1").value=p.weapon1;
+  $("weapon2").value=p.weapon2;
+  $("role").value=p.role;
+  openModal("playerModal");
+}
+
+function deletePlayer(playerId){
+  if(!confirm("Удалить игрока из системы?")) return;
+  players=players.filter(x=>x.id!==playerId);
+  groups.forEach(g=>{g.slots=g.slots.map(id=>id===playerId?null:id)});
+  raidPresets.forEach(r => r.groups.forEach(g => {g.slots=g.slots.map(id=>id===playerId?null:id)}));
+  save(); renderStats(); renderPlayers(); renderGroups(); renderRaid();
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+
+function openModal(id){$(id).classList.add("open")}
+function closeModal(id){$(id).classList.remove("open")}
+
+function applyTheme(theme){
+  const root = document.documentElement;
+  if(theme.bg) root.style.setProperty('--bg', theme.bg);
+  if(theme.accent) {
+    root.style.setProperty('--accent', theme.accent);
+    root.style.setProperty('--accent2', theme.accent);
+  }
+  if(theme.dd) root.style.setProperty('--dd', theme.dd);
+  if(theme.heal) root.style.setProperty('--heal', theme.heal);
+  if(theme.tank) root.style.setProperty('--tank', theme.tank);
+
+  if(theme.logoText) $("logoText").textContent = theme.logoText;
+  if(theme.logoMark) $("logoMark").textContent = theme.logoMark;
+}
+
+function loadTheme(){
+  try{
+    const theme = JSON.parse(localStorage.getItem("altTabCustomTheme") || "{}");
+    applyTheme(theme);
+    if(theme.bg) $("themeBg").value = theme.bg;
+    if(theme.accent) $("themeAccent").value = theme.accent;
+    if(theme.dd) $("themeDD").value = theme.dd;
+    if(theme.heal) $("themeHeal").value = theme.heal;
+    if(theme.tank) $("themeTank").value = theme.tank;
+    if(theme.logoText) $("customLogoText").value = theme.logoText;
+    if(theme.logoMark) $("customLogoMark").value = theme.logoMark;
+  }catch(e){}
+}
+
+function setup(){
+  load();
+  $("weapon1").innerHTML=weapons.map(w=>`<option>${w}</option>`).join("");
+  $("weapon2").innerHTML=weapons.map(w=>`<option>${w}</option>`).join("");
+
+  document.querySelectorAll(".nav button").forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+      $(btn.dataset.page+"Page").classList.add("active");
+      if(btn.dataset.page==="groups") renderGroups();
+      if(btn.dataset.page==="raid") renderRaid();
+    };
+  });
+
+  document.querySelectorAll("[data-group-filter]").forEach(btn=>{
+    btn.onclick=()=>{
+      groupRoleFilter=btn.dataset.groupFilter;
+      document.querySelectorAll("[data-group-filter]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); renderGroupPlayerPool();
+    };
+  });
+  document.querySelectorAll("[data-raid-filter]").forEach(btn=>{
+    btn.onclick=()=>{
+      raidRoleFilter=btn.dataset.raidFilter;
+      document.querySelectorAll("[data-raid-filter]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); renderRaidPlayerPool();
+    };
+  });
+
+  document.querySelectorAll("[data-modal-filter]").forEach(btn=>{
+    btn.onclick=()=>{
+      modalRoleFilter=btn.dataset.modalFilter;
+      document.querySelectorAll("[data-modal-filter]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active"); renderModalAvailablePlayers();
+    };
+  });
+  $("addGroupSearch").oninput = () => renderModalAvailablePlayers();
+
+  document.querySelectorAll(".stat[data-role-filter]").forEach(btn=>{
+    btn.onclick=()=>{ activeRoleFilter=btn.dataset.roleFilter; renderStats(); renderPlayers(); };
+  });
+  $("search").oninput = () => renderPlayers();
+  $("resetFilter").onclick = () => {
+    $("search").value=""; activeRoleFilter="all"; renderStats(); renderPlayers();
+  };
+
+  $("addPlayerBtn").onclick=()=>{ 
+    editingPlayerId=null; 
+    $("playerModalTitle").textContent="Добавить игрока";
+    $("playerForm").reset(); 
+    openModal("playerModal"); 
+  };
+  $("closePlayerModal").onclick=()=>closeModal("playerModal");
+  $("closeAddToGroupModal").onclick=()=>closeModal("addToGroupModal");
+  $("closeSelectTargetGroupModal").onclick=()=>closeModal("selectTargetGroupModal");
+  $("closeImportGroupModal").onclick=()=>closeModal("importGroupModal");
+
+  $("playerForm").onsubmit=e=>{
+    e.preventDefault();
+    const name=$("playerName").value.trim();
+    if(!name) return;
+
+    const isDuplicate = players.some(p => p.id !== editingPlayerId && p.name.toLowerCase() === name.toLowerCase());
+    if(isDuplicate){
+      alert(`Игрок с ником «${name}» уже существует!`);
+      return;
+    }
+
+    if(editingPlayerId){
+      const p=players.find(x=>x.id===editingPlayerId);
+      p.name=name; p.weapon1=$("weapon1").value; p.weapon2=$("weapon2").value; p.role=$("role").value;
+    }else{
+      players.push({id:uid(),name,weapon1:$("weapon1").value,weapon2:$("weapon2").value,role:$("role").value});
+    }
+    save(); closeModal("playerModal"); renderStats(); renderPlayers(); renderGroups(); renderRaid();
+  };
+
+  $("addGroupBtn").onclick=()=>{
+    const defaultName = `Группа ${groups.length + 1}`;
+    const nameInput = prompt("Введите название группы:", defaultName);
+    if (nameInput === null) return;
+    const finalName = nameInput.trim() || defaultName;
+
+    if(groups.some(g => g.name.toLowerCase() === finalName.toLowerCase())){
+      alert(`Группа с названием «${finalName}» уже существует!`);
+      return;
+    }
+
+    groups.push({id:uid(),name:finalName,slots:[null,null,null,null,null,null]});
+    save(); renderGroups();
+  };
+
+  $("addRaidGroupBtn").onclick=()=>{
+    const currentGroups = getCurrentRaidGroups();
+    const defaultName = `Отряд ${currentGroups.length + 1}`;
+    const nameInput = prompt("Введите название отряда:", defaultName);
+    if (nameInput === null) return;
+    const finalName = nameInput.trim() || defaultName;
+
+    if(currentGroups.some(g => g.name.toLowerCase() === finalName.toLowerCase())){
+      alert(`Отряд с названием «${finalName}» уже существует в этом рейде!`);
+      return;
+    }
+
+    currentGroups.push({id:uid(),name:finalName,slots:[null,null,null,null,null,null]});
+    save(); renderRaid();
+  };
+
+  $("importGroupToRaidBtn").onclick=()=>openImportGroupModal();
+
+  $("clearGroupsBtn").onclick=()=>{
+    if(!groups.length) return;
+    if(confirm("Вы уверены, что хотите удалить ВСЕ группы?")){
+      groups=[]; save(); renderGroups(); toast("Все группы удалены");
+    }
+  };
+
+  $("clearRaidBtn").onclick=()=>{
+    const currentGroups = getCurrentRaidGroups();
+    if(!currentGroups.length) return;
+    if(confirm("Вы уверены, что хотите удалить ВСЕ отряды из текущего рейда?")){
+      const preset = raidPresets.find(r => r.id === currentRaidId);
+      if(preset) preset.groups = [];
+      save(); renderRaid(); toast("Все отряды рейда удалены");
+    }
+  };
+
+  $("openThemeModal").onclick = () => openModal("themeModal");
+  $("closeThemeModal").onclick = () => closeModal("themeModal");
+  $("saveThemeBtn").onclick = () => {
+    const theme = {
+      bg: $("themeBg").value,
+      accent: $("themeAccent").value,
+      dd: $("themeDD").value,
+      heal: $("themeHeal").value,
+      tank: $("themeTank").value,
+      logoText: $("customLogoText").value.trim() || "ALT TAB",
+      logoMark: $("customLogoMark").value.trim() || "AT"
+    };
+    localStorage.setItem("altTabCustomTheme", JSON.stringify(theme));
+    applyTheme(theme);
+    closeModal("themeModal");
+    toast("Настройки вида сохранены");
+  };
+  $("resetThemeBtn").onclick = () => {
+    localStorage.removeItem("altTabCustomTheme");
+    location.reload();
+  };
+
+  renderStats(); renderPlayers(); setupPlayerContextMenu();
+}
+
+setup();
+</script>
+</body>
+</html>
